@@ -1,0 +1,59 @@
+# Mangle
+
+Part of BAD2BEEF's toolbox
+
+## Overview
+
+`mangle` is used to quickly rotate identifiable strings in binary blobs, such as server addresses or imports, so that hashed-based file location/detection and YARA rule `strings:` section and `pe.imports` conditions are less useful. That’s it.
+
+`mangle` only replaces byte sequences, so an initial key and obfuscated strings must be present in the binary. One would obfuscate with, say, *password* as a key, then call `mangle` with various randomly-ish generated keys of the same length to spit out unique blobs. (Beware nulls if you are relying on null-terminated strings!)
+
+## Building
+
+    go build mangle.go
+
+## Usage
+
+    mangle [xor|rc4] [old_key|""] [new_key] [file_in] [file_out|-] [TOKEN...]
+
+### Options
+
+- *xor|rc4* String mangling method
+- *old_key* Key for the mangling method
+- *new_key* New key to re-mangle strings with
+- *file_in* File to mangle strings in
+- *file_out|-* Output file, or - for `STDOUT`
+- *TOKEN...* *N* number of tokens to to replace in *file_in*
+
+### Examples
+
+#### Mangle XOR'd String
+
+    $ ./mangle xor cows cats imasheep.exe imasheep-mangled.exe Beep Sheep evil.server.tld:1234
+    "cows": 0x63 0x6f 0x77 0x73 -> 0x63 0x61 0x74 0x73
+    "Beep": 0x21 0x0a 0x12 0x03 -> 0x21 0x04 0x11 0x03
+    "Sheep": 0x30 0x07 0x12 0x16 0x13 -> 0x30 0x09 0x11 0x16 0x13
+    "evil.server.tld:1234": 0x06 0x19 0x1e 0x1f 0x4d 0x1c 0x12 0x01 0x15 0x0a 0x05 0x5d 0x17 0x03 0x13 0x49 0x52 0x5d 0x44 0x47 -> 0x06 0x17 0x1d 0x1f 0x4d 0x12 0x11 0x01 0x15 0x04 0x06 0x5d 0x17 0x0d 0x10 0x49 0x52 0x53 0x47 0x47
+
+#### Get Seed Values for Original Binary
+
+    $ ./mangle xor "" cows seedstringsin.txt seedstringsout.txt Beep Sheep evil.server.tld:1234
+    "Beep": 0x42 0x65 0x65 0x70 -> 0x21 0x0a 0x12 0x03
+    "Sheep": 0x53 0x68 0x65 0x65 0x70 -> 0x30 0x07 0x12 0x16 0x13
+    "evil.server.tld:1234": 0x65 0x76 0x69 0x6c 0x2e 0x73 0x65 0x72 0x76 0x65 0x72 0x2e 0x74 0x6c 0x64 0x3a 0x31 0x32 0x33 0x34 -> 0x06 0x19 0x1e 0x1f 0x4d 0x1c 0x12 0x01 0x15 0x0a 0x05 0x5d 0x17 0x03 0x13 0x49 0x52 0x5d 0x44 0x47
+
+#### Print Binary Differences
+
+    $  cmp -l imasheep.exe imasheep-mangled.exe | gawk '{printf "%08X %02X %02X\n", $1-1, strtonum(0$2), strtonum(0$3)}'
+    00002401 0A 04
+    00002402 05 06
+    00002405 03 0D
+    00002406 44 47
+    00002409 0B 05
+    0000240A 1B 18
+    0000240E 0A 04
+    0000240F 12 11
+    00002413 03 0D
+    00002414 12 11
+    00002426 6F 61
+    00002427 77 74

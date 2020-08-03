@@ -250,17 +250,26 @@ func httpHandlerBITS(httpWriter http.ResponseWriter, httpRequest *http.Request) 
 	}
 }
 
-func doServer(listener, route string) {
-	writeLog(listener, "-", 1, fmt.Sprintf("Starting lister with route %s", route))
+func doServer(listener, route, certificate, key string) {
+	writeLog(listener, "-", 1, fmt.Sprintf("Listening on %s%s", listener, route))
 	http.HandleFunc(route, httpHandlerBITS)
-	if err := http.ListenAndServe(listener, nil); err != nil {
-		log.Fatalln(err)
+
+	if len(certificate) > 0 && len(key) > 0 {
+		if err := http.ListenAndServeTLS(listener, certificate, key, nil); err != nil {
+			log.Fatalln(err)
+		}
+	} else {
+		if err := http.ListenAndServe(listener, nil); err != nil {
+			log.Fatalln(err)
+		}
 	}
 }
 
 func main() {
 	listener := flag.String("listen", ":8080", "HTTP listener address")
 	route := flag.String("route", "/bits", "URL Route for BITS")
+	certificate := flag.String("cert", "", "Certificate chain")
+	key := flag.String("key", "", "Private key for certificate")
 	pathBITS := flag.String("bits", "bits", "Base path for BITS transfers")
 	pathLogs := flag.String("logs", "logs", "Base path for log files")
 	flag.Parse()
@@ -268,5 +277,5 @@ func main() {
 	basePathBITS = *pathBITS
 	basePathLogs = *pathLogs
 
-	doServer(*listener, *route)
+	doServer(*listener, *route, *certificate, *key)
 }

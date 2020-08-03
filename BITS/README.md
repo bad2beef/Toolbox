@@ -1,6 +1,6 @@
 # BITS
 
-Part of BAD2BEEF's toolbox
+Part of BAD2BEEF's Toolbox
 
 ## Overview
 
@@ -18,6 +18,8 @@ This is a minimal BITS upload handler suitable for small one-off or containerize
 
 - **-listen** *:8080* Golang net/http listener string
 - **-route** */bits* URL route for BITS handler (Leading / required)
+- **-cert** Certificate chain if TLS is desired
+- **-key** Certificate's private key
 - **-bits** *bits* Directory to store BITS data
 - **-logs** *logs* Directory to store logs
 
@@ -26,8 +28,7 @@ This is a minimal BITS upload handler suitable for small one-off or containerize
 #### Start BITS Handler
 
     $ ./bits -listen :8080 -route /bits -bits bits -logs logs
-    0000-00-00T00:00:00-00:00 :8080 - Starting lister with route /bits
-
+    0000-00-00T00:00:00-00:00 :8080 - Listening on :8080/
 
 #### Perform Upload
 
